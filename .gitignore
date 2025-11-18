@@ -1,0 +1,45 @@
+﻿# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dll
+*.exe
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Node
+node_modules/
+.env.local
+
+# Secrets
+*.pem
+*.key
+.env
+
+# Models (large files)
+*.onnx
+*.pt
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform
+.terraform/
+*.tfstate
