@@ -11,16 +11,29 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
       context: ./services/api
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/crowd_mgmt
-    depends_on:
-      - postgres
+      API_PORT: "8080"
+    restart: unless-stopped
+
+  cv_worker:
+    build:
+      context: ./services/cv_worker
+      dockerfile: Dockerfile
+    environment:
+      CAMERA_ID: "cam-001"
+    restart: unless-stopped
 
 volumes:
   postgres_data:
