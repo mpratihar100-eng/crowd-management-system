@@ -1,4 +1,12 @@
-﻿# Build artifacts
+﻿# Create the setup script
+@'
+# setup-files.ps1 - Creates all essential project files
+
+Write-Host "Creating project files..." -ForegroundColor Cyan
+
+# Create .gitignore
+@"
+# Build artifacts
 build/
 *.o
 *.a
@@ -13,11 +21,9 @@ CMakeFiles/
 # IDE
 .vscode/
 .idea/
-*.swp
 
 # Python
 __pycache__/
-*.pyc
 venv/
 
 # Node
@@ -25,20 +31,15 @@ node_modules/
 .env.local
 
 # Secrets
-*.pem
 *.key
-.env
+secrets.yaml
 
-# Models (large files)
+# Models
 *.onnx
 *.pt
 
 # Logs
 *.log
-
-# OS
-.DS_Store
-Thumbs.db
 
 # Terraform
 .terraform/
