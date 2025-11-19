@@ -40,7 +40,6 @@ CREATE TABLE zone_metrics (
 );
 
 CREATE INDEX idx_zone_metrics_timestamp ON zone_metrics(timestamp DESC);
-CREATE INDEX idx_zone_metrics_zone ON zone_metrics(zone_id, timestamp DESC);
 
 -- Heatmap tiles
 CREATE TABLE heatmap_tiles (
@@ -65,45 +64,24 @@ CREATE TABLE recommendations (
     density DOUBLE PRECISION,
     staff_count INTEGER,
     status VARCHAR(16) DEFAULT 'pending',
-    action_timestamp TIMESTAMP,
     CHECK (type IN ('reroute_staff', 'preposition_staff')),
     CHECK (priority IN ('low', 'medium', 'high', 'critical')),
     CHECK (status IN ('pending', 'accepted', 'rejected'))
 );
 
-CREATE INDEX idx_recommendations_status ON recommendations(status, timestamp DESC);
-
--- Detection events
-CREATE TABLE detection_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    camera_id VARCHAR(64) NOT NULL REFERENCES cameras(camera_id),
-    timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
-    frame_id VARCHAR(64),
-    detection_count INTEGER NOT NULL,
-    detections JSONB
-);
-
-CREATE INDEX idx_detection_events_timestamp ON detection_events(timestamp DESC);
-CREATE INDEX idx_detection_events_camera ON detection_events(camera_id, timestamp DESC);
-
 -- Insert sample data
 INSERT INTO cameras (camera_id, name, location, active) VALUES
 ('cam-001', 'Main Entrance Camera', 'North entrance', true),
-('cam-002', 'Ride Queue Camera 1', 'Roller coaster', true),
-('cam-003', 'Food Court Camera', 'Central plaza', true);
+('cam-002', 'Ride Queue Camera 1', 'Roller coaster', true);
 
 INSERT INTO zones (zone_id, name, min_x, min_y, max_x, max_y, area_m2, threshold_high) VALUES
 ('zone-entrance-1', 'Main Entrance', 0, 0, 50, 30, 1500, 40),
 ('zone-ride-1', 'Roller Coaster Queue', 50, 0, 100, 40, 2000, 60),
-('zone-food-1', 'Food Court', 100, 0, 150, 50, 2500, 80),
-('zone-exit-1', 'Main Exit', 150, 0, 200, 30, 1500, 40);
+('zone-food-1', 'Food Court', 100, 0, 150, 50, 2500, 80);
 
--- Insert sample metrics
 INSERT INTO zone_metrics (zone_id, people_count, density, trend) VALUES
 ('zone-entrance-1', 42, 0.028, 0.15),
-('zone-ride-1', 67, 0.034, 0.25),
-('zone-food-1', 55, 0.022, 0.10);
+('zone-ride-1', 67, 0.034, 0.25);
 
--- Insert sample recommendation
 INSERT INTO recommendations (id, zone_id, type, priority, message, people_count, threshold, trend, density, staff_count) VALUES
-('rec-001', 'zone-entrance-1', 'reroute_staff', 'high', 'Dispatch 2 staff to entrance - high density detected', 42, 40, 0.15, 0.028, 2);
+('rec-001', 'zone-entrance-1', 'reroute_staff', 'high', 'Dispatch 2 staff to entrance', 42, 40, 0.15, 0.028, 2);
