@@ -3,37 +3,110 @@
 services:
   postgres:
     image: postgres:15-alpine
+    container_name: crowd-mgmt-db
     environment:
       POSTGRES_DB: crowd_mgmt
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: crowd_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - crowd-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: crowd-mgmt-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - crowd-net
 
   api:
     build:
       context: ./services/api
       dockerfile: Dockerfile
+    container_name: crowd-mgmt-api
     ports:
       - "8080:8080"
     environment:
-      API_PORT: "8080"
+      DATABASE_URL: postgresql://postgres:crowd_password@postgres:5432/crowd_mgmt
+      REDIS_URL: redis://redis:6379
+      API_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      - crowd-net
 
   cv_worker:
     build:
       context: ./services/cv_worker
       dockerfile: Dockerfile
+    container_name: crowd-mgmt-cv-worker
     environment:
-      CAMERA_ID: "cam-001"
+      CAMERA_ID: cam-001
+      PROCESSING_INTERVAL: 1
     restart: unless-stopped
+    networks:
+      - crowd-net
+
+  # LAPTOP CAMERA CAPTURE
+  camera_laptop:
+    build:
+      context: ./services/camera_capture
+      dockerfile: Dockerfile
+    container_name: crowd-mgmt-camera-laptop
+    environment:
+      CAMERA_ID: laptop-cam-001
+      CAMERA_SOURCE: "0"
+      API_URL: http://api:8080/api/v1
+    devices:
+      - /dev/video0:/dev/video0  # Linux/WSL
+    # For Windows, you'll need to run this outside Docker
+    restart: unless-stopped
+    networks:
+      - crowd-net
+
+  # CCTV CAMERA 1 (RTSP)
+  camera_cctv1:
+    build:
+      context: ./services/camera_capture
+      dockerfile: Dockerfile
+    container_name: crowd-mgmt-camera-cctv1
+    environment:
+      CAMERA_ID: cctv-entrance-001
+      RTSP_URL: "rtsp://username:password@192.168.1.100:554/stream1"
+      API_URL: http://api:8080/api/v1
+    restart: unless-stopped
+    networks:
+      - crowd-net
+
+  dashboard:
+    image: nginx:alpine
+    container_name: crowd-mgmt-dashboard
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web/dashboard:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    networks:
+      - crowd-net
 
 volumes:
   postgres_data:
+
+networks:
+  crowd-net:
+    driver: bridge
