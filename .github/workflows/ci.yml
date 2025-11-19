@@ -41,7 +41,7 @@ jobs:
         ./cv_worker test.jpg cam-001 || echo "CV Worker execution test completed"
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: binaries
         path: |
